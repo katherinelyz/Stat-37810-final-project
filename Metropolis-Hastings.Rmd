@@ -14,24 +14,26 @@ knitr::opts_chunk$set(echo = TRUE)
 ### The Beta Meteropolis-Hastings alogrithm
 
 ```{r algorithm}
-betametropolis <- function(startvalue, c, iterations = 10000){
+betametropolis <- function(startvalue, c, thin=10, burnin=1000, iterations=10000){
   chain = rep(0, iterations)
   for (i in 1:iterations){
-    currentvalue <- rbeta(1, c * startvalue, c * (1 - startvalue))
-    proposal <- dbeta(startvalue, c * currentvalue, c * (1 - currentvalue)) / dbeta(currentvalue, c * startvalue, c * (1 - startvalue))
-    posterior <- dbeta(currentvalue, 6, 4) / dbeta(startvalue, 6, 4)
-    if (runif(1) < min(1, posterior * proposal)){
-      chain[i] <- currentvalue
-      startvalue <- currentvalue
-    }else{
-      chain[i] <- startvalue
+    for (j in 1:thin){
+      currentvalue <- rbeta(1, c * startvalue, c * (1 - startvalue))
+      proposal <- dbeta(startvalue, c * currentvalue, c * (1 - currentvalue)) / dbeta(currentvalue, c * startvalue, c * (1 - startvalue))
+      posterior <- dbeta(currentvalue, 6, 4) / dbeta(startvalue, 6, 4)
+      if (runif(1) < min(1, posterior * proposal)){
+        startvalue <- currentvalue
+        chain[i] <- startvalue
+      }else{
+        chain[i] <- startvalue
+      }
     }
   }
-  return(chain)
+  return(chain[-(1:burnin)])
 }
 ```
 
-The Beta Meteropolis-Hastings alogrithm is defined as a function which starts with number of iteration of 0's called the *chain*.
+The Beta Meteropolis-Hastings alogrithm is defined as a function which starts with number of iteration of 0's called the *chain*. The default set *thin* = 10, *burnin* = 1,000, and *iterations* = 10,000
 
 The *currentvalue* is a proposal function of the form $$\phi_{prop}|\phi_{old} \sim Beta(c\phi_{old}, c(1-\phi_{old}))$$
 where the *startvalue* = $\phi_{old}$, with 1 observation.
@@ -50,7 +52,7 @@ Finally, this function will return the value of the *chain*.
 # generate a starting value from a uniform distribution
 startvalue <- runif(1)
 # set c=1 and run for 10,000 total iterations
-draws <- betametropolis(startvalue, 1, 10000)
+draws <- betametropolis(startvalue, 1, 10, 1000, 10000)
 ```
 
 This implements the alogrithm with c = 1 and runs for 10,000 total iterations. The starting value is generated from a uniform distribution. Call the resulting sampler *draws*.
@@ -95,7 +97,7 @@ Therefore, in general, the performance of the sampler with c = 1 is not quite go
 cvec<-c(0.1, 2.5, 10)
 for (i in 1:length(cvec)){
   par(mfrow=c(1, 3))
-  draws=betametropolis(startvalue, cvec[i], 10000)
+  draws=betametropolis(startvalue, cvec[i], 10, 1000, 10000)
   plot(draws, type = "l", main = paste("Trace plot: c = ", cvec[i])); acf(draws, main = paste("Autocorrelation plot: c = ", cvec[i])); hist(draws, freq = FALSE, main = paste ("Histogram: c = ", cvec[i]))
   x<-seq(0, 1, 0.01)
   lines(x, dbeta(x, 6, 4))
