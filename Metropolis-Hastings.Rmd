@@ -107,3 +107,27 @@ From the autocorrelation plots, we can see that c = 1 has most lags, which requi
 From the histograms, we can see that c = 10 seems to have the best fit for the target distribution Beta(6,4).
 
 ### The number of draws needed from the sampler before thinning and burn-in, and the comparison to the properties of the target distribution.
+
+```{r thinning&burn-in}
+betametropolis <- function(startvalue, c, thin, burnin, iterations=10000){
+  chain = rep(0, iterations)
+  for (i in 1:iterations){
+    for (j in 1:thin){
+      currentvalue <- rbeta(1, c * startvalue, c * (1 - startvalue))
+      proposal <- dbeta(startvalue, c * currentvalue, c * (1 - currentvalue)) / dbeta(currentvalue, c * startvalue, c * (1 - startvalue))
+      posterior <- dbeta(currentvalue, 6, 4) / dbeta(startvalue, 6, 4)
+      if (runif(1) < min(1, posterior * proposal)){
+        startvalue <- currentvalue
+        chain[i] <- startvalue
+      }else{
+        chain[i] <- startvalue
+      }
+    }
+  }
+  return(chain[-(1:burnin)])
+}
+
+startvalue <- runif(1)
+draws <- betametropolis(startvalue, 1, 10, 1000, 10000)
+```
+
