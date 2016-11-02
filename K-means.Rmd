@@ -1,0 +1,147 @@
+---
+title: "STAT 37810 Final Project #3: K-Means"
+author: "Yingzhao Li & Linlin Wu"
+date: "Nov. 1st, 2016"
+output: html_document
+---
+
+##Install packages
+###Note
+Package "rattle" is required for calling the wine data.
+
+Package "fpc" is required fro ploting the k means.
+
+Package "fields" is required for calculating the Euclidean distance. 
+
+Package "flexclust" is required for quantify the algorithm.
+
+```{r packages,eval=FALSE}
+install.packages("rattle")
+install.packages("fpc")
+install.packages("fields")
+install.packages("flexclust")
+```
+
+Please install all required package before running the following code.
+
+```{r library,include=FALSE}
+library(rattle)
+library(fpc)
+library(fields)
+library(flexclust)
+```
+
+##K-means function
+The K means function is defined as below.
+Euclidean distance measure method is used in the k-means function.
+```{r k means algorithm}
+#The K means algorithm
+k_means <- function(x, centers, iteration=10) { 
+    #iteration default is 10 as build-in function kmeans
+  oldcluster <- vector(iteration, mode="list")
+  oldcenter <- vector(iteration, mode="list")
+  
+  for(i in 1:iteration) {
+    centerdist <- rdist(x, centers) #Euclidean distance measure
+    clusters <- apply(centerdist, 1, which.min)
+    centers <- apply(x, 2, tapply, clusters, mean)
+    # Saving history
+    oldcluster <- clusters
+    oldcenter <- centers
+  }
+  
+  list(clusters=oldcluster, centers=oldcenter)
+}
+```
+
+##Calculate k means
+###Wine Data
+```{r kmeans}
+data<-(wine[-1]) #exclude the "Type" variable
+
+ktest <- as.matrix(data)
+centers <- ktest[sample(nrow(ktest), 3),]
+result <- k_means(ktest, centers, 10)
+plotcluster(data, result$clusters)
+```
+
+As we can see from the plot, the clusters are not very well seperated. There are some overlaps between each clusters.
+
+To quantify how well the algorithm's cluster correspond to the wine types, we will use the rand index.
+
+First, cross-tabulation is used to compare the k means clusters and the original classes of the dataset, which is the types of wines.
+```{r randindex}
+cross.tab <- table(wine$Type, result$clusters)
+randIndex(cross.tab)
+```
+
+The rand index gives the measure of the agreement between two partitions, adjusted for chance. It ranges from -1 (no agreement) to 1 (perfect agreement).
+
+In our case, agreement between the wine type and the cluster solution is not very strong.
+
+
+###Scaled wine data
+```{r scaled data}
+data2<-scale(data) #create a new scaled data. 
+
+ktest2 <- as.matrix(data2)
+centers2 <- ktest2[sample(nrow(ktest2), 3),]
+result2 <- k_means(ktest2, centers2, 10)
+plotcluster(data2, result2$clusters)
+```
+
+The steps are repeated except the data is now scaled. 
+
+Now, the data is clustered very well, not overlaps between clusters.
+
+```{r randindex after scale}
+cross.tab2 <- table(wine$Type, result2$clusters)
+randIndex(cross.tab2)
+```
+
+After the data is scaled, the rand index become very strong, which is around 0.9. The scaled clusters corresponded to the three wine types very well.
+
+The reason we need scale the data is in order to perform accuracy of distance of each clusters. The k-means minimizes the error function, so normalizing the data improves convergence of such algorithms.
+
+###Iris data
+```{r iris}
+data(iris) #call iris dataset
+
+data.iris<-iris[-5] #remove the "species" variable
+
+#repeat the steps
+ktest.iris <- as.matrix(data.iris)
+centers.iris <- ktest.iris[sample(nrow(ktest.iris), 3),]
+result.iris <- k_means(ktest.iris, centers.iris, 10)
+plotcluster(data.iris, result.iris$clusters)
+```
+
+From the plot, we can see that 2 clusters are not well seperated.
+
+```{r iris rand index}
+cross.tab.iris<-table(iris$Species,result.iris$clusters)
+randIndex(cross.tab.iris)
+```
+
+Clearly, the agreement between the iris species and the cluster solution is not very strong.
+
+###Scaled Iris data
+```{r scaled iris}
+data2.iris <- scale(data.iris)
+
+ktest2.iris <- as.matrix(data2.iris)
+centers2.iris <- ktest2.iris[sample(nrow(ktest2.iris), 3),]
+result2.iris <- k_means(ktest2.iris, centers2.iris, 10)
+plotcluster(data2.iris, result2.iris$clusters)
+```
+
+After the data is scaled, the clusters still have overlaps.
+
+```{r scaled iris rand index}
+cross.tab2.iris<-table(iris$Species,result2.iris$clusters)
+randIndex(cross.tab.iris)
+```
+
+The rand index of scaled iris is close to the original data. The agreement between iris species and the scaled clusters are still not strong.
+
+K means did not work well for classifying the Iris data. Scaling did not improve classifying it.
