@@ -150,7 +150,7 @@ After the iris data is scaled, the clusters still have overlaps.
 
 ```{r scaled iris rand index}
 cross.tab2.iris<-table(iris$Species,result2.iris$clusters)
-randIndex(cross.tab.iris)
+randIndex(cross.tab2.iris)
 ```
 
 The rand index of scaled iris is close to that of the original data. The agreement between iris species and the scaled clusters is still not strong.
