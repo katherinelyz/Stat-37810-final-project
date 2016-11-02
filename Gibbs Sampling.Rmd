@@ -1,0 +1,119 @@
+---
+title: "STAT 37810 Final Project #2: Gibbs Sampling"
+author: "Yingzhao Li & Linlin Wu"
+date: "Nov. 1st, 2016"
+output: html_document
+---
+
+## 1 Algorithm and Implementation
+
+The Gibbs Sampling alogrithm is defined as a function which starts with a zero matrix *M* of 3 by T, where T is the sample size.
+
+The initial values of x and y takes on a random number from (0,B), where B is a known positive constant.
+
+Since the conditional distribution of x|y is given as $p(x|y)=ye^{-yx}$, the cumulative density function of the conditional distribution is $F(x|y)=\int_0^x ye^{-yx}dx$. Using inverse transform sampling, we first generate a random number u from $U=Unif(0,1)$. Then $$u=\frac {\int_0^x ye^{-yx}dx}{\int_0^B ye^{-yx}dx}=\frac {1-e^{-xy}}{1-e^{-By}}.$$ Solving for x, we can get $$x=-\frac {ln(1-u+ue^{-B*y})}{y}.$$
+
+Similary, using inverse transform sampling and generating a random number v from $V=Unif(0,1)$, we have $$y=-\frac {ln(1-v+ve^{-B*x})}{x}.$$
+
+Then, we store the results into the *chain*. The first column of *M* stores the iterations from 1 to T. The second column of *M* stores the values of x for each iteration and the third column of *M* stores the values of y for each iteration.
+
+Finally, this function returns the complete matrix *M*.
+
+We implement the alogrithm for B=5 and for sample sizes T = 500, 5000, 50000, with thin = 10. 
+
+The algorithm and implementation in Python are shown as follows:
+
+```{python algorithm}
+import matplotlib.pyplot as plt
+import numpy as np
+from numpy import *
+import random, math
+from math import *
+from random import *
+def gibbs(T, B, thin):
+    M = zeros((T, 3))
+    x = uniform(0, B)
+    y = uniform(0, B)
+    print "Iter  x  y"
+    for i in range(T):
+        for j in range(thin):
+            u = random()
+            x = -log(1 - u + u * exp(-B * y)) / y
+            v = random()
+            y = -log(1 - v + v * exp(-B * x)) / x
+        M[i, 0] = i + 1
+        M[i, 1] = x
+        M[i, 2] = y
+    return M
+    
+print gibbs(T = 500, B = 5, thin = 10)
+print gibbs(T = 5000, B = 5, thin = 10)
+print gibbs(T = 50000, B = 5, thin = 10)
+```
+
+## 2 Histograms of values for x
+```{python histograms, echo=FALSE}
+import matplotlib.pyplot as plt
+import numpy as np
+from numpy import *
+import random,math
+from math import *
+from random import *
+def gibbs(T, B, thin):
+    M = zeros((T, 3))
+    x = uniform(0, B)
+    y = uniform(0, B)
+    for i in range(T):
+        for j in range(thin):
+            u = random()
+            x = -log(1 - u + u * exp(-B * y)) / y
+            v = random()
+            y = -log(1 - v + v * exp(-B * x)) / x
+        M[i, 0] = i + 1
+        M[i, 1] = x
+        M[i, 2] = y
+    # histogram of values for x
+    plt.hist(M[:,1])
+    plt.title("Histogram of values for x with sample size T=%r" % T)
+    plt.savefig('gibbs%r.png' % T)  
+
+gibbs(T = 500, B = 5, thin = 10)
+gibbs(T = 5000, B = 5, thin = 10)
+gibbs(T = 50000, B = 5, thin = 10)
+```
+
+For B=5 and for sample sizes T = 500, 5000, 50000, the histograms of values for x are shown as follows.
+![](gibbs500.png)
+![](gibbs5000.png)
+![](gibbs50000.png)
+
+## 3 Estimate of the expectation of X
+```{python expectation of X, echo = FALSE}
+import matplotlib.pyplot as plt
+import numpy as np
+from numpy import *
+import random,math
+from math import *
+from random import *
+def gibbs(T, B, thin):
+    M = zeros((T, 3))
+    x = uniform(0, B)
+    y = uniform(0, B)
+    for i in range(T):
+        for j in range(thin):
+            u = random()
+            x = -log(1 - u + u * exp(-B * y)) / y
+            v = random()
+            y = -log(1 - v + v * exp(-B * x)) / x
+        M[i, 0] = i + 1
+        M[i, 1] = x
+        M[i, 2] = y
+    # the expectation of X
+    print np.mean(M[:,1])
+
+gibbs(T = 500, B = 5, thin = 10)
+gibbs(T = 5000, B = 5, thin = 10)
+gibbs(T = 50000, B = 5, thin = 10)
+```
+
+Simulation based approximations provide straightforward methods of calculating the moments of the marginal distributions. By using the 500, 5000 and 50000 samples from the sampler, we can estimate that the expectation of X, $E_{p(X)}[X]$, is around 1.26.
