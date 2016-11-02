@@ -31,7 +31,7 @@ library(fields)
 library(flexclust)
 ```
 
-## K-means function
+## K-Means function
 The K means function is defined as below. Euclidean distance measure method is used in the k-means function.
 
 ```{r k means algorithm}
@@ -55,7 +55,7 @@ k_means <- function(x, centers, iteration=10) {
 }
 ```
 
-## Implement k means
+## Implement K-Means
 
 ### Wine data
 
@@ -133,7 +133,7 @@ cross.tab.iris<-table(iris$Species,result.iris$clusters)
 randIndex(cross.tab.iris)
 ```
 
-Clearly, the agreement between the iris species and the cluster solution is not very strong.
+The rand index is around 0.7, which indicates that the agreement between the iris species and the cluster solution is not very strong.
 
 ### Scaled iris data
 
